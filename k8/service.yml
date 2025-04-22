@@ -1,15 +1,41 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ingress-wildcard-host
+  name: fsl-service
+  namespace: production
 spec:
   ports:
   - port: 8080
-    name: web
-  clusterIP: None
+    targetPort: 8080
   selector:
-    app: app-name
+    app: fsl-app
+  type: ClusterIP  # Mantenha como ClusterIP (o Ingress cuidará do roteamento)
+
 ---
 apiVersion: apps/v1
 kind: StatefulSet
-## TODO: Complete the rest
+metadata:
+  name: my-statefulset
+  namespace: production
+spec:
+  serviceName: fsl-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fsl-app
+  template:
+    metadata:
+      labels:
+        app: fsl-app
+    spec:
+      containers:
+      - name: app
+        image: nginx:latest  # Replace with your valid container image
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: my-secret  # Ensure this secret exists in the 'production' namespace
+              key: MY_SECRET
